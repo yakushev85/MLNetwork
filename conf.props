@@ -1,0 +1,6 @@
+inCount=25
+neuronCounts=10 5 3
+maxLearningIterations=10000
+initialWeightValue=0.1
+alpha=0.5
+speed=0.1
