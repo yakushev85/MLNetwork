@@ -28,7 +28,7 @@ class Neuron
 		this->inCount = inCount;
 		this->weightOffset = 0.0;
 
-        inVector = new vector<double>();
+        inVector = nullptr;
         weights = new vector<double>();
         delta = new vector<double>();
 
