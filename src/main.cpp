@@ -109,13 +109,50 @@ vector<double>* strToDoubleArray(string v)
     return resArray;
 }
 
+vector<TeachDataEntity>* loadData(string fn)
+{
+    vector<TeachDataEntity>* resultVector = new vector<TeachDataEntity>();
+    ifstream dataFile;
+    dataFile.open(fn, ios_base::in);
 
-NetConfiguration* loadData(string configFn, string dataFn)
+    if (dataFile.is_open()) 
+    {
+        string currentLine;
+        bool is_inp = true;
+        TeachDataEntity cTeachEntity;
+
+        while (dataFile.good())
+        {
+            getline(dataFile, currentLine);
+
+            if (is_inp) 
+            {
+                cTeachEntity = TeachDataEntity();
+                cTeachEntity.inp = strToDoubleArray(currentLine);
+                is_inp = false;
+            }
+            else
+            {
+                cTeachEntity.output = strToDoubleArray(currentLine);
+                is_inp = true;
+                resultVector->push_back(cTeachEntity);
+
+                cout << vectorToString(cTeachEntity.inp) << " -> " << vectorToString(cTeachEntity.output) << endl;
+            }
+        }
+
+        dataFile.close();
+    }
+
+    return resultVector;
+}
+
+NetConfiguration* loadConf(string configFn, string dataFn)
 {
     NetConfiguration* nConfig = new NetConfiguration();
 
     ifstream confFile;
-    confFile.open("conf.props", ios_base::in);
+    confFile.open(configFn, ios_base::in);
 
     if (confFile.is_open()) 
     {
@@ -169,53 +206,25 @@ NetConfiguration* loadData(string configFn, string dataFn)
         confFile.close();
     }
 
-    nConfig->teachData = new vector<TeachDataEntity>();
-    ifstream dataFile;
-    dataFile.open("data.txt", ios_base::in);
-
-    if (dataFile.is_open()) 
-    {
-        string currentLine;
-        bool is_inp = true;
-        TeachDataEntity cTeachEntity;
-
-        while (dataFile.good())
-        {
-            getline(dataFile, currentLine);
-
-            if (is_inp) 
-            {
-                cTeachEntity = TeachDataEntity();
-                cTeachEntity.inp = strToDoubleArray(currentLine);
-                is_inp = false;
-            }
-            else
-            {
-                cTeachEntity.output = strToDoubleArray(currentLine);
-                is_inp = true;
-                nConfig->teachData->push_back(cTeachEntity);
-
-                cout << vectorToString(cTeachEntity.inp) << " -> " << vectorToString(cTeachEntity.output) << endl;
-            }
-        }
-
-        cout << "nConfig.teachData.size = " << nConfig->teachData->size() << endl;
-
-        dataFile.close();
-    }
+    nConfig->teachData = loadData(dataFn);
+    cout << "nConfig.teachData.size = " << nConfig->teachData->size() << endl;
 
     return nConfig;
 }
 
 int main()
 {
-    string confFilename("../conf.props");
-    string dataFilename("../data.txt");
+    string confFilename("./conf.props");
+    string dataFilename("./data.txt");
+    string examFilename("./exam.txt");
 	cout << "Network initialization for ..." << endl;
 
-	NetConfiguration* configuration = loadData(confFilename, dataFilename);
+	NetConfiguration* configuration = loadConf(confFilename, dataFilename);
 
 	MultiNetwork* multiNetwork = new MultiNetwork(configuration);
+
+    vector<TeachDataEntity>* examData = loadData(examFilename);
+    cout << "examData.size = " << examData->size() << endl;
 
 	cout << "Learning..." << endl;
 	multiNetwork->learn(true);
@@ -231,8 +240,20 @@ int main()
 		cout << mark << endl;
 	}
 
+    cout << "Examing..." << endl;
+    for (TeachDataEntity examItem : *examData) 
+	{
+		string outputStr = vectorToString(multiNetwork->execute(examItem.inp));
+		string answerStr = vectorToString(examItem.output);
+		string mark = (outputStr == answerStr)? " PASSED": " FAILED";
+
+		cout << "Actual: " << outputStr << " Expected: " << answerStr << endl;
+		cout << mark << endl;
+	}
+
 	cout << "Done." << endl;
 
+    delete examData;
     delete multiNetwork;
     delete configuration;
 
