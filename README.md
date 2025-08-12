@@ -4,7 +4,7 @@ Simple implementation of a neural network using C++. Learning using BackPropagat
 
 # Build
 
-`make all`
+`make`
 
 # Run
 
